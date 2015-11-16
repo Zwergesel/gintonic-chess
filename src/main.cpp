@@ -13,7 +13,6 @@ int main()
 	Data::initialize();
 	initmagicmoves();
 	
-	Engine engine;
 	UCIProtocol uci(std::unique_ptr<Engine>(new Engine()));
 	uci.run();
 	return 0;

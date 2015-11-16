@@ -12,8 +12,8 @@ public:
 	};
 	
 	TranspositionTable(int maxSize);
-	void recordHash(u64 zobrist, int searchDepth, int depth, score_t value, hashf type, move_t move);
-	int probeHash(u64 zobrist, int searchDepth, int depth, score_t alpha, score_t beta) const;
+	void recordHash(u64 zobrist, score_t value, hashf type, int depth, int age, move_t move);
+	int probeHash(u64 zobrist, int depth, score_t alpha, score_t beta, move_t& outMove) const;
 	move_t getMove(u64 zobrist) const;
 	
 private:
@@ -24,7 +24,8 @@ private:
 		u16 value;
 		u16 move;
 		u8 depth;
-		u8 flag;
+		u8 type;
+		u8 age;
 	};
 	#pragma pack(pop)
 	

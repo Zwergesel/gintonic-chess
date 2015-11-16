@@ -160,7 +160,8 @@ score_t Engine::QuiescenceSearch(int depth, score_t alpha, score_t beta)
 	// Stop command received?
 	if (think_ == thinkStop) return Score::command_stop;
 	
-	score_t value = hashtable_.probeHash(board_.zobrist_, search_.depth + depth, 0, alpha, beta);
+	score_t value = Score::unknown;
+	//= hashtable_.probeHash(board_.zobrist_, search_.depth + depth, 0, alpha, beta);
 	if (value == Score::unknown) {
 		value = Evaluator::evaluatePosition(board_);
 	}
