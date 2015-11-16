@@ -4,8 +4,8 @@
 
 TranspositionTable::TranspositionTable(int maxSize)
 {
-	sizeMask_ = 1 << 31;
-	while (sizeMask_ > maxSize) sizeMask_ >>= 1;
+	sizeMask_ = 1ULL << 32;
+	while (sizeMask_ * sizeof(HashEntry) > maxSize) sizeMask_ >>= 1;
 	table_.resize(sizeMask_);
 	--sizeMask_;
 }
@@ -28,7 +28,7 @@ void TranspositionTable::recordHash(u64 zobrist,
 		table_[index].value = (u16) value;
 		table_[index].depth = (u8) depth;
 		table_[index].flag = (u8) flag;
-		table_[index].move = move;
+		table_[index].move = (u16) move;
 	}
 }
 

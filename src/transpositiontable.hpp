@@ -18,15 +18,15 @@ public:
 	
 private:
 	
-	//#pragma pack(push, 1)
+	#pragma pack(push, 1)
 	struct HashEntry {
 		u64 zobrist;
-		score_t value;
-		move_t move;
+		u16 value;
+		u16 move;
 		u8 depth;
 		u8 flag;
 	};
-	//#pragma pack(pop)
+	#pragma pack(pop)
 	
 	size_t sizeMask_;
 	std::vector<HashEntry> table_;

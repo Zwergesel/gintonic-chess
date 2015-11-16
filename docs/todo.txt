@@ -1,6 +1,8 @@
 ==Next==
 Bug: PV is incomplete when finding a mate
 -- Debug position: position fen 5k2/R7/4K3/8/8/8/8/8 b - - 0 1
+Engine: 50-move rule
+Engine: Draw by repetition
 Engine: Transposition Table
 Transposition Table: Aging
 Engine: Dynamic Aspiration Window
