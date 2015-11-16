@@ -1,0 +1,49 @@
+==Move Ordering==
+590 KxQ
+580 PxQ
+570 NxQ
+560 BxQ
+550 KxR
+540 PxR
+530 RxQ
+520 NxR
+510 BxR
+500 KxB
+490 KxN
+480 PxB
+470 PxN
+460 KxP
+
+430 Nx0
+420 Bx0
+400 Px0
+390 Qx0
+380 Rx0
+
+370 NxB
+360 NxN
+350 BxB
+340 BxN
+330 QxQ
+320 RxR
+310 PxP
+
+300 Kx0
+
+290 QxR
+280 RxB
+270 RxN
+260 QxB
+250 QxN
+240 NxP
+230 BxP
+220 RxP
+210 QxP
+
+Promotion: Queen +200
+Promotion: Rook -380
+Promotion: Knight -390
+Promotion: Bishop -400
+Castle: Kingside +150
+Castle: Queenside +140
+Double Pawn Push: +10

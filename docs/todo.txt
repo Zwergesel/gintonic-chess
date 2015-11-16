@@ -1,0 +1,12 @@
+==Next==
+Bug: PV is incomplete when finding a mate
+-- Debug position: position fen 5k2/R7/4K3/8/8/8/8/8 b - - 0 1
+Engine: Transposition Table
+Transposition Table: Aging
+Engine: Dynamic Aspiration Window
+Engine: Null-Move Forward Pruning
+
+==Misc==
+Transposition Table: Two-table-system (Depth-preferred + Always-replace)
+Transposition Table: Collision Detection via stored move
+Move List: Do not allocate in every NegaMax, keep one long "stack" and index of the first move
