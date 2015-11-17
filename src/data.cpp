@@ -4,6 +4,8 @@
 u64 Data::zobrist[1024];
 bitboard_t Data::attacks_king[64];
 bitboard_t Data::attacks_knight[64];
+bitboard_t Data::attacks_pawn_white[64];
+bitboard_t Data::attacks_pawn_black[64];
 
 void Data::initialize()
 {
@@ -49,6 +51,19 @@ void Data::initialize()
 		} else if (i%8 >= 6) {
 			attacks_knight[i] &= ~file[0];
 			attacks_knight[i] &= ~file[1];
+		}
+	}
+	
+	// === PAWN ATTACKS === //
+	for (int i=0; i<=63; ++i) {
+		attacks_pawn_white[i] = attacks_pawn_black[i] = 0L;
+		if (i%8 != 0) {
+			if (i > 7) attacks_pawn_black[i] |= (1l << (i-9));
+			if (i < 56) attacks_pawn_white[i] |= (1l << (i+7));
+		}
+		if (i%8 != 7) {
+			if (i > 7) attacks_pawn_black[i] |= (1l << (i-7));
+			if (i < 56) attacks_pawn_white[i] |= (1l << (i+9));
 		}
 	}
 }

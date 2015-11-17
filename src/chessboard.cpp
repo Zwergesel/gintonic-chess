@@ -22,14 +22,29 @@ void ChessBoard::generateMoves(std::vector<move_t>& movelist)
 {
 	generateMovesKing(movelist, Data::all_squares);
 	generateMovesKnight(movelist, Data::all_squares);
-	generateMovesBishopRookQueen(movelist, Data::all_squares);
+	generateMovesSliding(movelist, bishop, Data::all_squares);
+	generateMovesSliding(movelist, rook, Data::all_squares);
+	generateMovesSliding(movelist, queen, Data::all_squares);
 	generateMovesPawn(movelist, false);
 	generateCastles(movelist);
 	stdx::erase_if(movelist, [this](move_t m) { return leavesKingInCheck(m); });
 }
 
-void ChessBoard::generateGoodCaptures(std::vector<move_t>& movelist) const
+void ChessBoard::generateGoodCaptures(std::vector<move_t>& movelist)
 {
+	player_t color = player_ ^ opponent;
+	bitboard_t capture = mask_[color];
+	generateMovesKing(movelist, capture);
+	capture ^= mask_[color | pawn];
+	generateMovesKnight(movelist, capture);
+	generateMovesSliding(movelist, bishop, capture);
+	capture ^= mask_[color | knight];
+	capture ^= mask_[color | bishop];
+	generateMovesSliding(movelist, rook, capture);
+	capture ^= mask_[color | rook];
+	generateMovesSliding(movelist, queen, capture);
+	generateMovesPawn(movelist, true);
+	stdx::erase_if(movelist, [this](move_t m) { return leavesKingInCheck(m); });
 }
 
 void ChessBoard::generateAttacks(std::vector<move_t>& movelist) const
@@ -64,21 +79,19 @@ void ChessBoard::generateMovesKnight(std::vector<move_t>& movelist, bitboard_t a
 	}
 }
 
-void ChessBoard::generateMovesBishopRookQueen(std::vector<move_t>& movelist, bitboard_t allowed) const
+void ChessBoard::generateMovesSliding(std::vector<move_t>& movelist, piece_t type, bitboard_t allowed) const
 {
-	for (piece_t type = bishop; type <= queen; ++type) {
-		bitboard_t myPieces = mask_[player_ | type];
-		while (myPieces) {
-			square_t from = Magic::extractBit(myPieces);
-			bitboard_t moves = 0L;
-			if (type & 1) moves |= Bmagic(from, occupied_);
-			if (type & 2) moves |= Rmagic(from, occupied_);
-			moves &= ~mask_[player_];
-			moves &= allowed;
-			while (moves) {
-				int to = Magic::extractBit(moves);
-				movelist.push_back(MAKE_MOVE_FT(from, to));
-			}
+	bitboard_t myPieces = mask_[player_ | type];
+	while (myPieces) {
+		square_t from = Magic::extractBit(myPieces);
+		bitboard_t moves = 0L;
+		if (type & 1) moves |= Bmagic(from, occupied_);
+		if (type & 2) moves |= Rmagic(from, occupied_);
+		moves &= ~mask_[player_];
+		moves &= allowed;
+		while (moves) {
+			int to = Magic::extractBit(moves);
+			movelist.push_back(MAKE_MOVE_FT(from, to));
 		}
 	}
 }
@@ -214,10 +227,11 @@ int ChessBoard::isSquareAttacked(square_t square, player_t color) const
 	if (Data::attacks_king[square] & mask_[color|king]) return 1;
 	
 	// Attacked by pawn?
+	// Note: We treat the target square as a pawn to see from where enemy pawns might attack
 	if (color == white) {
-		if (mask_[white|pawn] & (BIT(square-7) | BIT(square-9))) return 1;
+		if (mask_[white|pawn] & Data::attacks_pawn_black[square]) return 1;
 	} else {
-		if (mask_[black|pawn] & (BIT(square+7) | BIT(square+9))) return 1;
+		if (mask_[black|pawn] & Data::attacks_pawn_white[square]) return 1;
 	}
 	
 	return 0;
@@ -382,6 +396,11 @@ void ChessBoard::undoMove(move_t move)
 	enpassant_ = history.enpassant;
 	drawmoves_ = history.drawmoves;
 	zobrist_ = history.zobrist;
+}
+
+bool ChessBoard::lastMoveWasQuiet() const
+{
+	return history_.empty() || history_.top().capture == nothing;
 }
 
 bool ChessBoard::leavesKingInCheck(move_t move)

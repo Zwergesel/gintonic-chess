@@ -92,8 +92,10 @@ namespace Data
 	const int prioritySpecial[16] = { 0, -39, -40, -38, 20, 15, 14, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
 	const int priorityMax = 99;
 	
-	extern bitboard_t attacks_king[];
-	extern bitboard_t attacks_knight[];
+	extern bitboard_t attacks_king[64];
+	extern bitboard_t attacks_knight[64];
+	extern bitboard_t attacks_pawn_white[64];
+	extern bitboard_t attacks_pawn_black[64];
 	
 	// Zobrist format:
 	// 6 bit = square

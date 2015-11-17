@@ -59,7 +59,7 @@ public:
 	
 	// Generate moves
 	void generateMoves(std::vector<move_t>& movelist);
-	void generateGoodCaptures(std::vector<move_t>& movelist) const;
+	void generateGoodCaptures(std::vector<move_t>& movelist);
 	void generateAttacks(std::vector<move_t>& movelist) const;
 	void sortMoves(std::vector<move_t>& movelist, move_t sortFirst) const;
 	bool isKingAttacked(player_t color) const;
@@ -68,6 +68,7 @@ public:
 	void doMove(move_t move);
 	void undoMove(move_t move);
 	bool isValidMove(move_t move) const;
+	bool lastMoveWasQuiet() const;
 	
 	// Debug printing
 	void printBoard(std::ostream& out) const;
@@ -99,7 +100,7 @@ private:
 	// Generate moves
 	void generateMovesKing(std::vector<move_t>& movelist, bitboard_t allowed) const;
 	void generateMovesKnight(std::vector<move_t>& movelist, bitboard_t allowed) const;
-	void generateMovesBishopRookQueen(std::vector<move_t>& movelist, bitboard_t allowed) const;
+	void generateMovesSliding(std::vector<move_t>& movelist, piece_t type, bitboard_t allowed) const;
 	void generateMovesPawn(std::vector<move_t>& movelist, bool captures_only) const;
 	void generateCastles(std::vector<move_t>& movelist) const;
 	int isSquareAttacked(square_t square, player_t color) const;
