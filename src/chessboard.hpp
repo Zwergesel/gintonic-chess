@@ -61,7 +61,7 @@ public:
 	void generateMoves(std::vector<move_t>& movelist);
 	void generateGoodCaptures(std::vector<move_t>& movelist) const;
 	void generateAttacks(std::vector<move_t>& movelist) const;
-	void sortMoves(std::vector<move_t>& movelist) const;
+	void sortMoves(std::vector<move_t>& movelist, move_t sortFirst) const;
 	bool isKingAttacked(player_t color) const;
 	
 	// Perform moves

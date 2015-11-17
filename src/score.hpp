@@ -4,13 +4,12 @@ namespace Score
 {
 	
 	// Special scores
-	const score_t infinity = 32760;
-	const score_t unknown = -32768;
-	const score_t checkmate = 32700;
+	const score_t command_stop = 23000;
+	const score_t unknown = 22000;
+	const score_t infinity = 21000;
+	const score_t checkmate = 20000;
+	const score_t mate_bound = 19500;
 	const score_t stalemate = 0;
-	const score_t mate_bound = 32500;
-	const score_t command_stop = 32767;
-	const score_t quiescence_check = 32400;
 	
 	// White pieces: ___, pawn, knight, king, ___, bishop, rook, queen
 	// Black pieces: ___, pawn, knight, king, ___, bishop, rook, queen

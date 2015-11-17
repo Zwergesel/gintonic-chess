@@ -229,16 +229,22 @@ bool ChessBoard::isKingAttacked(player_t color) const
 	return isSquareAttacked(myKing, color ^ opponent);
 }
 
-void ChessBoard::sortMoves(std::vector<move_t>& movelist) const
+void ChessBoard::sortMoves(std::vector<move_t>& movelist, move_t sortFirst) const
 {
-	for (move_t& move : movelist) {
-		// Compute the priority of the move
-		piece_t piece = board_[MOVE_FROM(move)] & mask_piecetype;
-		piece_t capture = board_[MOVE_TO(move)] & mask_piecetype;
-		int priority = 100 - Data::priorityCaptures[piece][capture] + Data::prioritySpecial[MOVE_SPECIAL(move)];
-		move |= ((u16)priority) << 16;
+	for (size_t i = 0; i < movelist.size(); ++i) {
+		move_t& move = movelist[i];
+		if (move == sortFirst) {
+			// Guarantee the first position for the specified move
+			move |= ((u16)Data::priorityMax) << 16;
+		} else {
+			// Compute the priority of the move
+			piece_t piece = board_[MOVE_FROM(move)] & mask_piecetype;
+			piece_t capture = board_[MOVE_TO(move)] & mask_piecetype;
+			int priority = Data::priorityCaptures[piece][capture] + Data::prioritySpecial[MOVE_SPECIAL(move)];
+			move |= ((u16)priority) << 16;
+		}
 	}
-	std::sort(movelist.begin(), movelist.end());
+	std::sort(movelist.begin(), movelist.end(), std::greater<move_t>());
 }
 
 void ChessBoard::doMove(move_t move)

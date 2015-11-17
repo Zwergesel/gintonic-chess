@@ -16,6 +16,6 @@ typedef u32 move_t;
 typedef u64 bitboard_t;
 typedef u16 square_t;
 
-typedef int32_t score_t;
+typedef int16_t score_t;
 
 #define BIT(x) (1L << (x))

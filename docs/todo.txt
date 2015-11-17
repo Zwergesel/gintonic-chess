@@ -1,8 +1,6 @@
 ==Next==
 Engine: 50-move rule
 Engine: Draw by repetition
-Engine: Transposition Table
-Transposition Table: Aging
 Engine: Dynamic Aspiration Window
 Engine: Null-Move Forward Pruning
 
@@ -10,3 +8,4 @@ Engine: Null-Move Forward Pruning
 Transposition Table: Two-table-system (Depth-preferred + Always-replace)
 Transposition Table: Collision Detection via stored move
 Move List: Do not allocate in every NegaMax, keep one long "stack" and index of the first move
+Do Move: Only set the enpassant flag if there's actually a pawn there that can capture

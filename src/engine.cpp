@@ -37,22 +37,22 @@ void Engine::Search()
 		return;
 	}
 	
-	// Sort moves to search potentially better moves first
-	board_.sortMoves(movelist);
-	
 	// TODO put this somewhere else??
 	// We store this for when the search cancels in the middle of a new round
 	score_t bestvalue = 0;
 	move_t bestmove = 0;
 	std::vector<move_t> bestpv;
 	
-	while (search_.depth <= search_.maxDepth)
+	while (search_.depth <= search_.maxDepth && abs(bestvalue) < Score::mate_bound)
 	{
 		// Stop because maximum search time was exceeded
 		auto milli = duration_cast<milliseconds>(steady_clock::now() - search_.startTime).count();
 		std::cout << "Timer: " << milli << " milliseconds have passed" << std::endl;
 		if (milli > search_.maxTime) break;
 
+		// Sort move list; Top half will contain value from previous round
+		std::sort(movelist.begin(), movelist.end(), std::greater<move_t>());
+		
 		score_t alpha = -Score::infinity;
 		score_t beta = Score::infinity;
 		
@@ -63,8 +63,12 @@ void Engine::Search()
 		{
 			std::vector<move_t> localpv;
 			board_.doMove(movelist[i]);
-			score_t value = -NegaMax(1, -beta, -alpha, true, localpv);
+			score_t value = -NegaMax(search_.depth - 1, -beta, -alpha, true, localpv);
 			board_.undoMove(movelist[i]);
+			
+			u32 wide_value = (32768 + value) << 16;
+			movelist[i] &= 0xffff;
+			movelist[i] |= wide_value;
 			
 			if (value > alpha) {
 				alpha = value;
@@ -77,7 +81,12 @@ void Engine::Search()
 		bestmove = roundmove;
 		bestpv.assign(roundpv.begin(), roundpv.end());
 		
-		std::cout << "info depth " << (int)search_.depth << " score " << bestvalue;
+		std::cout << "info depth " << (int)search_.depth << " score ";
+		if (abs(bestvalue) < Score::mate_bound) {
+			std::cout << "cp " << bestvalue;
+		} else {
+			std::cout << "mate " << ((Score::checkmate - abs(bestvalue) + 1) / 2);
+		}
 		std::cout << " pv " << board_.uciMove(bestmove);
 		for (move_t move : bestpv) std::cout << " " << board_.uciMove(move);
 		std::cout << std::endl;
@@ -96,84 +105,98 @@ void Engine::Search()
 score_t Engine::NegaMax(int depth, score_t alpha, score_t beta, bool nullmove, std::vector<move_t>& deeppv)
 {
 	++info_.nodesSearched;
+	move_t bestMove = 0;
 	
-	if (depth == search_.depth) {
+	// Query hashtable for previous results
+	const auto& entry = hashtable_.getEntry(board_.zobrist_);
+	if (entry.zobrist == board_.zobrist_) {
+		// Hash entry is deep enough to be used directly?
+		if (entry.depth >= depth) {
+			score_t value = entry.value;
+			if (value > Score::mate_bound) {
+				value -= search_.depth - depth;
+			} else if (value < -Score::mate_bound) {
+				value += search_.depth - depth;
+			}
+			if (entry.type == TranspositionTable::hashfExact) {
+				return value;
+			} else if (entry.type == TranspositionTable::hashfBeta) {
+				alpha = std::max(alpha, value);
+			} else if (entry.type == TranspositionTable::hashfAlpha) {
+				beta = std::min(beta, value);
+			}
+			if (alpha >= beta) return value;
+		}
+		// Otherwise just use the previously best move as the first one for searching
+		bestMove = entry.move;
+	}
+	
+	// Reached a leaf of the search. Evaluate the position.
+	if (depth == 0) {
 		score_t value = Evaluator::evaluatePosition(board_);
 		return value;
 	}
 	
+	// Generate all moves from this position
 	std::vector<move_t> movelist;
 	board_.generateMoves(movelist);
 	
-	// Checkmate and stalemate
+	// Catch checkmate and stalemate
 	if (movelist.size() == 0) {
 		if (board_.isKingAttacked(board_.player_)) {
 			// Checkmate: Subtract depth to score faster mates higher
-			return -(Score::checkmate - depth);
+			return -(Score::checkmate - (search_.depth - depth));
 		} else {
 			return Score::stalemate;
 		}
 	}
 	
 	// Sort moves to search potentially better moves first
-	board_.sortMoves(movelist);
+	board_.sortMoves(movelist, bestMove);
 	
 	// Search all follow-up moves
+	TranspositionTable::HashType hashType = TranspositionTable::hashfAlpha;
+	score_t gamma = -Score::infinity;
+	
 	for (int i=0; i<movelist.size(); ++i)
 	{
 		std::vector<move_t> localpv;
 		board_.doMove(movelist[i]);
-		score_t value = -NegaMax(depth+1, -beta, -alpha, true, localpv);
+		score_t value = -NegaMax(depth-1, -beta, -alpha, true, localpv);
 		board_.undoMove(movelist[i]);
 		
-		if (value >= beta) {
-			return beta;
-		}
-		if (value > alpha) {
-			alpha = value;
+		// Gamma is the best score from this position
+		if (value > gamma) {
+			gamma = value;
+			bestMove = (u16)movelist[i];
 			deeppv.clear();
-			deeppv.push_back(movelist[i]);
+			deeppv.push_back(bestMove);
 			deeppv.insert(deeppv.end(), localpv.begin(), localpv.end());
 		}
+		// Alpha is our best score so far
+		if (value > alpha) {
+			alpha = value;
+			hashType = TranspositionTable::hashfExact;
+		}
+		// Beta is the worst score the opponent can force on us
+		// It causes cutoffs when we exceed it because the opponent will not play this line
+		if (alpha >= beta) {
+			hashType = TranspositionTable::hashfBeta;
+			break;
+		}
 	}
+	
+	if (gamma > Score::mate_bound) {
+		gamma += search_.depth - depth;
+	} else if (gamma < -Score::mate_bound) {
+		gamma -= search_.depth - depth;
+	}
+	hashtable_.recordHash(board_.zobrist_, gamma, hashType, depth, board_.movenumber_, bestMove);
 	
 	return alpha;
 }
 
 score_t Engine::QuiescenceSearch(int depth, score_t alpha, score_t beta)
 {
-	++info_.nodesSearched;
-	if (depth > info_.selectiveDepthReached) info_.selectiveDepthReached = depth;
-	
-	// Stop command received?
-	if (think_ == thinkStop) return Score::command_stop;
-	
-	score_t value = Score::unknown;
-	//= hashtable_.probeHash(board_.zobrist_, search_.depth + depth, 0, alpha, beta);
-	if (value == Score::unknown) {
-		value = Evaluator::evaluatePosition(board_);
-	}
-	if (value >= beta) return beta;
-	if (value > alpha) alpha = value;
-	
-	std::vector<move_t> movelist;
-	board_.generateGoodCaptures(movelist);
-	if (movelist.size() == 0) return Score::quiescence_check;
-	
-	/*
-	compareHash = 0;
-	comparePly = Const.MAX_SEARCH - 1;
-	sortMoves(move_list, 0, move_list.size() - 1);
-	*/
-	
-	for (int i=0; i<movelist.size(); ++i) {
-		board_.doMove(movelist[i]);
-		value = -QuiescenceSearch(depth+1, -beta, -alpha);
-		board_.undoMove(movelist[i]);
-		
-		if (value >= beta) return beta;
-		if (value > alpha) alpha = value;
-	}
-	
-	return alpha;
+	return 0;
 }

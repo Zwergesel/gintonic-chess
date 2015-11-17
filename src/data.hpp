@@ -89,8 +89,8 @@ namespace Data
 		{ 38, 22, 27, 0, 0, 28, 32, 53 }, // rook
 		{ 39, 21, 25, 0, 0, 26, 29, 33 }, // queen
 	};
-	
 	const int prioritySpecial[16] = { 0, -39, -40, -38, 20, 15, 14, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
+	const int priorityMax = 99;
 	
 	extern bitboard_t attacks_king[];
 	extern bitboard_t attacks_knight[];
