@@ -28,9 +28,9 @@ void Data::initialize()
 			}
 		}
 		if (i%8 == 0) {
-			attacks_king[i] &= ~file[0];
-		} else if (i%8 == 7) {
 			attacks_king[i] &= ~file[7];
+		} else if (i%8 == 7) {
+			attacks_king[i] &= ~file[0];
 		}
 	}
 	
