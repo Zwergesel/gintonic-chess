@@ -73,13 +73,6 @@ void Engine::Search()
 			}
 		}
 		
-		// Adjust for checkmate depth
-		if (Score::mate_bound <= alpha && alpha <= Score::checkmate) {
-			alpha -= 1;
-		} else if (-Score::mate_bound >= alpha && alpha >= -Score::checkmate) {
-			alpha += 1;
-		}
-		
 		bestvalue = alpha;
 		bestmove = roundmove;
 		bestpv.assign(roundpv.begin(), roundpv.end());
@@ -115,7 +108,8 @@ score_t Engine::NegaMax(int depth, score_t alpha, score_t beta, bool nullmove, s
 	// Checkmate and stalemate
 	if (movelist.size() == 0) {
 		if (board_.isKingAttacked(board_.player_)) {
-			return -Score::checkmate;
+			// Checkmate: Subtract depth to score faster mates higher
+			return -(Score::checkmate - depth);
 		} else {
 			return Score::stalemate;
 		}
@@ -143,12 +137,6 @@ score_t Engine::NegaMax(int depth, score_t alpha, score_t beta, bool nullmove, s
 		}
 	}
 	
-	// Adjust for checkmate depth
-	if (Score::mate_bound <= alpha && alpha <= Score::checkmate) {
-		alpha -= 1;
-	} else if (-Score::mate_bound >= alpha && alpha >= -Score::checkmate) {
-		alpha += 1;
-	}
 	return alpha;
 }
 
