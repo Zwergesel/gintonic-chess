@@ -107,6 +107,9 @@ score_t Engine::NegaMax(int depth, score_t alpha, score_t beta, bool nullmove, s
 	++info_.nodesSearched;
 	move_t bestMove = 0;
 	
+	// Draw by 50-move rule (= 100 half-moves)
+	if (board_.drawmoves_ == 100) return Score::stalemate;
+	
 	// Query hashtable for previous results
 	const auto& entry = hashtable_.getEntry(board_.zobrist_);
 	if (entry.zobrist == board_.zobrist_) {

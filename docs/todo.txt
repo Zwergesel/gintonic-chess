@@ -1,6 +1,6 @@
 ==Next==
-Engine: 50-move rule
-Engine: Draw by repetition
+Engine: Draw by repetition: 7Q/1k3pbp/6p1/8/1n6/8/PN4PP/K1B3RR w - - 0 1
+Engine: Quiescence Search
 Engine: Dynamic Aspiration Window
 Engine: Null-Move Forward Pruning
 
@@ -9,3 +9,6 @@ Transposition Table: Two-table-system (Depth-preferred + Always-replace)
 Transposition Table: Collision Detection via stored move
 Move List: Do not allocate in every NegaMax, keep one long "stack" and index of the first move
 Do Move: Only set the enpassant flag if there's actually a pawn there that can capture
+
+==Done==
+Engine: 50-move rule: position fen 7k/R7/5K2/8/8/p7/P7/8 w - - 98 69

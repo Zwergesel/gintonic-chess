@@ -469,9 +469,12 @@ bool ChessBoard::setPosition(const tokenizer& tokens, tokenizer::iterator& token
 		++token;
 		
 		// Parse move number: 21
+		// Note: We need to read to a temporary int because drawmoves_ is a char
 		if (token == tokens.end()) return false;
 		ss = std::stringstream(*token);
-		ss >> drawmoves_;
+		int integerDrawmoves;
+		ss >> integerDrawmoves;
+		drawmoves_ = (u8)integerDrawmoves;
 		++token;
 		
 		// Parse draw moves: 7
@@ -743,6 +746,7 @@ void ChessBoard::printBoard(std::ostream& out) const
 	}
 	out << "castling: " << (int)castling_ << '\n';
 	out << "enpassant: " << (int)enpassant_ << '\n';
+	out << "drawmoves: " << (int)drawmoves_ << '\n';
 }
 
 void ChessBoard::printBitboard(std::ostream& out, bitboard_t bitboard)
