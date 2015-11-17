@@ -48,11 +48,12 @@ private:
 		int maxTime;
 		int depth;
 		int maxDepth;
+		int quiescenceDepth;
 	} search_;
 	
 	struct SearchInfo {
 		u32 nodesSearched;
-		u8 selectiveDepthReached;
+		int selectiveDepthReached;
 	} info_;
 	
 };

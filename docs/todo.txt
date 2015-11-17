@@ -1,6 +1,6 @@
 ==Next==
 Engine: Draw by repetition: 7Q/1k3pbp/6p1/8/1n6/8/PN4PP/K1B3RR w - - 0 1
-Engine: Quiescence Search
+Bug: 2k5/8/2P1K3/3B4/4P3/8/8/8 w - - 3 66 play out in Shredder (twice)
 Engine: Dynamic Aspiration Window
 Engine: Null-Move Forward Pruning
 
@@ -12,3 +12,4 @@ Do Move: Only set the enpassant flag if there's actually a pawn there that can c
 
 ==Done==
 Engine: 50-move rule: position fen 7k/R7/5K2/8/8/p7/P7/8 w - - 98 69
+Bug: 1r4k1/2p2ppp/2p5/p1Pp1P2/PrbPp1Pq/1PR1P1NP/1RQ4K/8 b - - 4 33

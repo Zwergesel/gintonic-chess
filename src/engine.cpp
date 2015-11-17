@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include "engine.hpp"
 #include "evaluator.hpp"
 #include "score.hpp"
@@ -18,9 +20,10 @@ void Engine::Search()
 	info_.selectiveDepthReached = 0;
 	
 	search_.maxDepth = 15;
+	search_.quiescenceDepth = 8;
 	search_.depth = 1;
 	search_.startTime = steady_clock::now();
-	search_.maxTime = 15000;
+	search_.maxTime = 8000;
 	
 	think_ = thinkSearch;
 	
@@ -45,11 +48,6 @@ void Engine::Search()
 	
 	while (search_.depth <= search_.maxDepth && abs(bestvalue) < Score::mate_bound)
 	{
-		// Stop because maximum search time was exceeded
-		auto milli = duration_cast<milliseconds>(steady_clock::now() - search_.startTime).count();
-		std::cout << "Timer: " << milli << " milliseconds have passed" << std::endl;
-		if (milli > search_.maxTime) break;
-
 		// Sort move list; Top half will contain value from previous round
 		std::sort(movelist.begin(), movelist.end(), std::greater<move_t>());
 		
@@ -81,23 +79,26 @@ void Engine::Search()
 		bestmove = roundmove;
 		bestpv.assign(roundpv.begin(), roundpv.end());
 		
-		std::cout << "info depth " << (int)search_.depth << " score ";
+		// Display search information
+		auto milli = duration_cast<milliseconds>(steady_clock::now() - search_.startTime).count();
+		auto nps = (info_.nodesSearched / std::max(1LL, (milli / 1000)));
+		std::stringstream ss;
+		ss << "info depth " << search_.depth << " seldepth " << info_.selectiveDepthReached;
+		ss << " nodes " << info_.nodesSearched << " nps " << nps << " score ";
 		if (abs(bestvalue) < Score::mate_bound) {
-			std::cout << "cp " << bestvalue;
+			ss << "cp " << bestvalue;
 		} else {
-			std::cout << "mate " << ((Score::checkmate - abs(bestvalue) + 1) / 2);
+			ss << "mate " << ((Score::checkmate - abs(bestvalue) + 1) / 2);
 		}
-		std::cout << " pv " << board_.uciMove(bestmove);
-		for (move_t move : bestpv) std::cout << " " << board_.uciMove(move);
-		std::cout << std::endl;
+		ss << " pv " << board_.uciMove(bestmove);
+		for (move_t move : bestpv) ss << " " << board_.uciMove(move);
+		UCIProtocol::sendMessage(ss.str());
 		++search_.depth;
+		
+		// Stop because maximum search time was exceeded
+		if (milli > search_.maxTime) break;
 	}
 	
-	auto milli = duration_cast<milliseconds>(steady_clock::now() - search_.startTime).count();
-	std::cout << "Final Timer: " << milli << " milliseconds have passed" << std::endl;
-	string pvinfo = "info pv " + board_.uciMove(bestmove);
-	for (move_t move : bestpv) pvinfo += " " + board_.uciMove(move);
-	UCIProtocol::sendMessage(pvinfo);
 	UCIProtocol::sendMessage("bestmove " + board_.uciMove(bestmove));
 	think_ = thinkStop;
 }
@@ -136,8 +137,12 @@ score_t Engine::NegaMax(int depth, score_t alpha, score_t beta, bool nullmove, s
 	
 	// Reached a leaf of the search. Evaluate the position.
 	if (depth == 0) {
-		score_t value = Evaluator::evaluatePosition(board_);
-		return value;
+		if (board_.lastMoveWasQuiet()) {
+			return Evaluator::evaluatePosition(board_);
+		} else {
+			--info_.nodesSearched;
+			return QuiescenceSearch(search_.quiescenceDepth, alpha, beta);
+		}
 	}
 	
 	// Generate all moves from this position
@@ -161,7 +166,7 @@ score_t Engine::NegaMax(int depth, score_t alpha, score_t beta, bool nullmove, s
 	TranspositionTable::HashType hashType = TranspositionTable::hashfAlpha;
 	score_t gamma = -Score::infinity;
 	
-	for (int i=0; i<movelist.size(); ++i)
+	for (unsigned i=0; i<movelist.size(); ++i)
 	{
 		std::vector<move_t> localpv;
 		board_.doMove(movelist[i]);
@@ -201,5 +206,26 @@ score_t Engine::NegaMax(int depth, score_t alpha, score_t beta, bool nullmove, s
 
 score_t Engine::QuiescenceSearch(int depth, score_t alpha, score_t beta)
 {
-	return 0;
+	int selectiveDepth = search_.depth + search_.quiescenceDepth - depth;
+	info_.selectiveDepthReached = std::max(info_.selectiveDepthReached, selectiveDepth);
+	++info_.nodesSearched;
+	
+	score_t stand_pat = Evaluator::evaluatePosition(board_);
+	if (stand_pat >= beta || depth == 0) return stand_pat;
+	if (alpha < stand_pat) alpha = stand_pat;
+	
+	std::vector<move_t> movelist;
+	board_.generateGoodCaptures(movelist);
+	board_.sortMoves(movelist, 0);
+	
+	for (move_t move : movelist) {
+		board_.doMove(move);
+		score_t value = -QuiescenceSearch(depth-1, -beta, -alpha);
+		board_.undoMove(move);
+		
+		if (value > beta) return beta;
+		if (value > alpha) alpha = value;
+	}
+	
+	return alpha;
 }
