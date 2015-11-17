@@ -18,7 +18,7 @@ UCIProtocol::UCIProtocol(std::unique_ptr<Engine> engine):engine_(std::move(engin
 
 void UCIProtocol::recvMessage(const string& message)
 {
-	std::cout << "<< " << message << std::endl;
+	//std::cout << "<< " << message << std::endl;
 	
 	// Split into tokens
 	boost::char_separator<char> separator(" \t");
@@ -58,9 +58,6 @@ void UCIProtocol::recvMessage(const string& message)
 		if (!engine_->board().setPosition(tokens, token)) {
 			engine_->board().setInitialPosition();
 			sendMessage("info string error: invalid position");
-		} else {
-			// TODO: remove
-			engine_->board().printBoard(std::cout);
 		}
 	}
 	else if (command == "go")
